@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run ETL pipeline (builds schema + loads sample data)
+        run: python src/etl_pipeline.py
+
+      - name: Run PII assurance check (SQL-11 - must return zero rows)
+        run: python src/run_sql.py sql/11_pii_assurance_check.sql
+
+      - name: Run test suite with coverage
+        run: pytest tests/ --cov=src --cov-report=term-missing --cov-fail-under=90
